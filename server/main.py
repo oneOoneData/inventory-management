@@ -47,12 +47,18 @@ def apply_filters(items: list, warehouse: Optional[str] = None, category: Option
     return filtered
 
 # CORS middleware
+# NOTE: allow_credentials must stay False while allow_origins is the "*" wildcard.
+# The two together are an invalid combination that makes Starlette reflect any
+# Origin back with Access-Control-Allow-Credentials: true — effectively letting any
+# website make credentialed cross-origin calls. This API is unauthenticated and
+# local-only; if auth is ever added, replace "*" with an explicit origin allowlist.
+# Methods/headers are scoped to what the frontend actually sends (GET + Content-Type).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["Content-Type"],
 )
 
 # Data models
@@ -228,12 +234,22 @@ def get_recent_transactions():
     return recent_transactions
 
 @app.get("/api/reports/quarterly")
-def get_quarterly_reports():
-    """Get quarterly performance reports"""
+def get_quarterly_reports(
+    warehouse: Optional[str] = None,
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    month: Optional[str] = None
+):
+    """Get quarterly performance reports, honoring the global filter bar"""
+    # Apply the same filters the rest of the app uses so Reports stays consistent
+    # with the dashboard/orders views when the user changes the filter bar.
+    filtered_orders = apply_filters(orders, warehouse, category, status)
+    filtered_orders = filter_by_month(filtered_orders, month)
+
     # Calculate quarterly statistics from orders
     quarters = {}
 
-    for order in orders:
+    for order in filtered_orders:
         order_date = order.get('order_date', '')
         # Determine quarter
         if '2025-01' in order_date or '2025-02' in order_date or '2025-03' in order_date:
@@ -274,11 +290,19 @@ def get_quarterly_reports():
     return result
 
 @app.get("/api/reports/monthly-trends")
-def get_monthly_trends():
-    """Get month-over-month trends"""
+def get_monthly_trends(
+    warehouse: Optional[str] = None,
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    month: Optional[str] = None
+):
+    """Get month-over-month trends, honoring the global filter bar"""
+    filtered_orders = apply_filters(orders, warehouse, category, status)
+    filtered_orders = filter_by_month(filtered_orders, month)
+
     months = {}
 
-    for order in orders:
+    for order in filtered_orders:
         order_date = order.get('order_date', '')
         if not order_date:
             continue
@@ -305,5 +329,11 @@ def get_monthly_trends():
     return result
 
 if __name__ == "__main__":
+    import os
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    # Bind to localhost only by default. This API has no authentication and returns
+    # all business data anonymously; binding 0.0.0.0 would expose it to every device
+    # on the local network (e.g. shared workshop Wi-Fi). Override with API_HOST if a
+    # container genuinely needs to listen on all interfaces.
+    host = os.getenv("API_HOST", "127.0.0.1")
+    uvicorn.run(app, host=host, port=8001)
