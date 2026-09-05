@@ -6,6 +6,8 @@ export default {
     orders: 'Orders',
     finance: 'Finance',
     demandForecast: 'Demand Forecast',
+    reports: 'Reports',
+    collapseSidebar: 'Collapse sidebar',
     companyName: 'Catalyst Components',
     subtitle: 'Inventory Management System'
   },
@@ -206,7 +208,8 @@ export default {
     backordered: 'Backordered',
     inStock: 'In Stock',
     lowStock: 'Low Stock',
-    adequate: 'Adequate'
+    adequate: 'Adequate',
+    unknown: 'Unknown'
   },
 
   // Trends
@@ -302,6 +305,91 @@ export default {
     dueDate: 'Due Date',
     addTask: 'Add Task',
     noTasks: 'No tasks yet. Add your first task above!'
+  },
+
+  // Detail Modals
+  modals: {
+    product: {
+      title: 'Product Details',
+      category: 'Category',
+      warehouse: 'Warehouse',
+      unitsOrdered: 'Units Ordered',
+      totalRevenue: 'Total Revenue',
+      currentStock: 'Current Stock',
+      reorderPoint: 'Reorder Point',
+      firstOrderDate: 'First Order Date',
+      stockStatus: 'Stock Status',
+      units: 'units'
+    },
+    backlog: {
+      title: 'Inventory Shortage Details',
+      priorityBadge: '{priority} Priority',
+      shortageAmount: 'Shortage Amount',
+      daysDelayed: 'Days Delayed',
+      orderId: 'Order ID',
+      itemSku: 'Item SKU',
+      quantityNeeded: 'Quantity Needed',
+      quantityAvailable: 'Quantity Available',
+      expectedDate: 'Expected Date',
+      status: 'Status',
+      backordered: 'Backordered',
+      units: 'units',
+      days: 'days'
+    },
+    inventory: {
+      title: 'Inventory Item Details',
+      quantityOnHand: 'Quantity on Hand',
+      stockLevel: 'Stock Level',
+      vsReorderPoint: 'vs. reorder point',
+      category: 'Category',
+      location: 'Location',
+      reorderPoint: 'Reorder Point',
+      unitsRemaining: 'Units Remaining',
+      unitCost: 'Unit Cost',
+      totalValue: 'Total Value',
+      warehouse: 'Warehouse',
+      status: 'Status',
+      units: 'units'
+    },
+    cost: {
+      title: '{month} Cost Breakdown',
+      totalCosts: 'Total Costs',
+      procurement: 'Procurement',
+      operational: 'Operational',
+      labor: 'Labor',
+      overhead: 'Overhead',
+      ofTotal: '% of total',
+      close: 'Close'
+    }
+  },
+
+  // Reports
+  reports: {
+    title: 'Performance Reports',
+    subtitle: 'View quarterly performance metrics and monthly trends',
+    loading: 'Loading reports...',
+    loadError: 'Failed to load reports',
+    quarterlyPerformance: 'Quarterly Performance',
+    monthlyRevenueTrend: 'Monthly Revenue Trend',
+    momAnalysis: 'Month-over-Month Analysis',
+    table: {
+      quarter: 'Quarter',
+      totalOrders: 'Total Orders',
+      totalRevenue: 'Total Revenue',
+      avgOrderValue: 'Avg Order Value',
+      fulfillmentRate: 'Fulfillment Rate',
+      month: 'Month',
+      orders: 'Orders',
+      revenue: 'Revenue',
+      change: 'Change',
+      growthRate: 'Growth Rate'
+    },
+    stats: {
+      totalRevenueYTD: 'Total Revenue (YTD)',
+      avgMonthlyRevenue: 'Avg Monthly Revenue',
+      totalOrdersYTD: 'Total Orders (YTD)',
+      bestQuarter: 'Best Performing Quarter'
+    }
   },
 
   // Language

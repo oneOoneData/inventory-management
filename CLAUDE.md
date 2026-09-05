@@ -18,6 +18,7 @@ Use the Task tool with these specialized subagents for appropriate tasks:
 
 ### Skills
 - **backend-api-test** skill: Use when writing or modifying tests in `tests/backend` directory with pytest and FastAPI TestClient
+- **frontend-design** skill: Use when redesigning the client UI, replacing the top nav with a sidebar, or introducing a design system in `client/`
 
 ### MCP Tools
 - **ALWAYS use GitHub MCP tools** (`mcp__github__*`) for ALL GitHub operations
@@ -70,7 +71,19 @@ npm install && npm run dev
 - Styles: `client/src/App.vue`
 
 ## Design System
-- Colors: Slate/gray (#0f172a, #64748b, #e2e8f0)
-- Status: green/blue/yellow/red
-- Charts: Custom SVG, CSS Grid for layouts
-- No emojis in UI
+- **Tokens**: All design values are CSS custom properties in the `:root` block at the
+  top of `client/src/App.vue`'s global `<style>`. Consume them with `var(--...)`;
+  do not hardcode hex/px in scoped styles. Full set + a hex-to-token map lives in
+  `.claude/skills/frontend-design/references/design-tokens.css`.
+- **Palette**: warm gray neutrals (`--color-neutral-50..950`, page `--bg-app`,
+  surfaces `--bg-surface`), periwinkle indigo accent (`--accent` `#5f66c9`,
+  `--accent-subtle` for active/selected). Status: `--color-{success,warning,danger,info}-{fg,subtle}`.
+- **Scales**: spacing `--space-1..12` (4px base), radius `--radius-{sm,md,lg}`
+  (10/12/16px), elevation `--shadow-{xs,sm,md}`, type `--text-xs..3xl`.
+- **Layout**: left sidebar shell (`--sidebar-w` 256px, collapses to `--sidebar-w-collapsed`,
+  state in `localStorage['sidebar-collapsed']`); `FilterBar` is a sticky sub-header
+  of the scrolling content column; one `@media (max-width: 1024px)` breakpoint turns
+  the sidebar into an off-canvas drawer. See the **frontend-design** skill.
+- Font: Inter, loaded via `<link>` in `client/index.html`.
+- Charts: Custom SVG / CSS only (no chart library). CSS Grid for layouts.
+- No emojis in UI. Icons are inline SVG (no icon library).

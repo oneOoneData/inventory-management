@@ -6,6 +6,8 @@ export default {
     orders: '注文',
     finance: '財務',
     demandForecast: '需要予測',
+    reports: 'レポート',
+    collapseSidebar: 'サイドバーを折りたたむ',
     companyName: '触媒コンポーネンツ',
     subtitle: '在庫管理システム'
   },
@@ -206,7 +208,8 @@ export default {
     backordered: 'バックオーダー',
     inStock: '在庫あり',
     lowStock: '在庫僅少',
-    adequate: '適量'
+    adequate: '適量',
+    unknown: '不明'
   },
 
   // Trends
@@ -302,6 +305,91 @@ export default {
     dueDate: '期限',
     addTask: 'タスクを追加',
     noTasks: 'タスクがありません。上記からタスクを追加してください！'
+  },
+
+  // Detail Modals
+  modals: {
+    product: {
+      title: '製品詳細',
+      category: 'カテゴリ',
+      warehouse: '倉庫',
+      unitsOrdered: '注文数量',
+      totalRevenue: '総収益',
+      currentStock: '現在の在庫',
+      reorderPoint: '再注文点',
+      firstOrderDate: '初回注文日',
+      stockStatus: '在庫状況',
+      units: '個'
+    },
+    backlog: {
+      title: '在庫不足の詳細',
+      priorityBadge: '優先度：{priority}',
+      shortageAmount: '不足数量',
+      daysDelayed: '遅延日数',
+      orderId: '注文ID',
+      itemSku: '品目SKU',
+      quantityNeeded: '必要数量',
+      quantityAvailable: '在庫数量',
+      expectedDate: '入荷予定日',
+      status: 'ステータス',
+      backordered: 'バックオーダー',
+      units: '個',
+      days: '日'
+    },
+    inventory: {
+      title: '在庫品目の詳細',
+      quantityOnHand: '手持在庫数',
+      stockLevel: '在庫レベル',
+      vsReorderPoint: '再注文点との比較',
+      category: 'カテゴリ',
+      location: '場所',
+      reorderPoint: '再注文点',
+      unitsRemaining: '残り数量',
+      unitCost: '単価',
+      totalValue: '総価値',
+      warehouse: '倉庫',
+      status: 'ステータス',
+      units: '個'
+    },
+    cost: {
+      title: '{month} コスト内訳',
+      totalCosts: '総コスト',
+      procurement: '調達',
+      operational: '運用',
+      labor: '労務',
+      overhead: '間接費',
+      ofTotal: '％（全体比）',
+      close: '閉じる'
+    }
+  },
+
+  // Reports
+  reports: {
+    title: 'パフォーマンスレポート',
+    subtitle: '四半期のパフォーマンス指標と月次トレンドを表示',
+    loading: 'レポートを読み込み中...',
+    loadError: 'レポートの読み込みに失敗しました',
+    quarterlyPerformance: '四半期パフォーマンス',
+    monthlyRevenueTrend: '月次収益トレンド',
+    momAnalysis: '前月比分析',
+    table: {
+      quarter: '四半期',
+      totalOrders: '総注文数',
+      totalRevenue: '総収益',
+      avgOrderValue: '平均注文額',
+      fulfillmentRate: '充足率',
+      month: '月',
+      orders: '注文数',
+      revenue: '収益',
+      change: '変化',
+      growthRate: '成長率'
+    },
+    stats: {
+      totalRevenueYTD: '総収益（年初来）',
+      avgMonthlyRevenue: '月平均収益',
+      totalOrdersYTD: '総注文数（年初来）',
+      bestQuarter: '最高パフォーマンスの四半期'
+    }
   },
 
   // Language

@@ -273,23 +273,41 @@ const chartData = computed(() => {
 </style>
 ```
 
-**Use CSS variables for themes:**
+**Design tokens (required):**
+The design system is a `:root` block of CSS custom properties at the top of the
+global `<style>` in `src/App.vue`. Scoped component styles MUST consume these with
+`var(--...)` and MUST NOT hardcode hex or px values.
 ```css
-:root {
-  --primary-color: #3b82f6;
-  --danger-color: #ef4444;
-}
-
-.button {
-  background: var(--primary-color);
-}
+/* src/App.vue :root — do not redefine per-component */
+--accent: #5f66c9;
+--text-primary: var(--color-neutral-900);
+--border: var(--color-neutral-200);
+--space-4: 1rem;        /* 4px scale: --space-1..12 */
+--radius-md: 12px;      /* --radius-sm|md|lg */
+--shadow-xs: /* ... */; /* --shadow-xs|sm|md */
 ```
+```vue
+<style scoped>
+.panel {
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+</style>
+```
+Do not re-declare shared primitives (`.card`, `.stat-card`, `table`, `.badge`,
+`.page-header`, `.loading`, `.error`) in a component — they are global in `App.vue`.
+The token list and a hex-to-token map are in
+`.claude/skills/frontend-design/references/design-tokens.css`.
 
 **Responsive design:**
-- Use rem/em units for scalability
-- Mobile-first approach
-- CSS Grid for layouts
-- Flexbox for component arrangement
+- Use the `--space-*` / `--text-*` tokens (rem-based)
+- One breakpoint: `@media (max-width: 1024px)` (`--breakpoint-md`); below it the
+  sidebar becomes an off-canvas drawer
+- CSS Grid for layouts, Flexbox for component arrangement
+- Layout shell (sidebar + content column + sticky `FilterBar`) is in `App.vue`; see
+  the `frontend-design` skill before changing it
 
 **Class binding:**
 ```vue
