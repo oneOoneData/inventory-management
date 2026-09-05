@@ -1,129 +1,119 @@
 <template>
-  <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="isOpen" class="modal-overlay" @click="close">
-        <div class="modal-container tasks-modal-container" @click.stop>
-          <div class="modal-header">
-            <h3 class="modal-title">{{ t('tasks.title') }}</h3>
-            <button class="close-button" @click="close">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </button>
-          </div>
-
-          <div class="modal-body">
-            <!-- Add Task Form -->
-            <div class="task-form">
-              <div class="form-row">
-                <div class="form-group flex-1">
-                  <label for="task-title">{{ t('tasks.taskTitle') }}</label>
-                  <input
-                    id="task-title"
-                    v-model="newTask.title"
-                    type="text"
-                    :placeholder="t('tasks.taskTitlePlaceholder')"
-                    class="task-input"
-                    @keyup.enter="handleAddTask"
-                  />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="task-priority">{{ t('tasks.priority') }}</label>
-                  <select
-                    id="task-priority"
-                    v-model="newTask.priority"
-                    class="task-select"
-                  >
-                    <option value="high">{{ t('priority.high') }}</option>
-                    <option value="medium">{{ t('priority.medium') }}</option>
-                    <option value="low">{{ t('priority.low') }}</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="task-due-date">{{ t('tasks.dueDate') }}</label>
-                  <input
-                    id="task-due-date"
-                    v-model="newTask.dueDate"
-                    type="date"
-                    class="task-input"
-                  />
-                </div>
-
-                <div class="form-group-btn">
-                  <button @click="handleAddTask" class="task-add-btn" :disabled="!newTask.title.trim() || !newTask.dueDate">
-                    {{ t('tasks.addTask') }}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="tasks-divider"></div>
-
-            <!-- Tasks List -->
-            <div v-if="sortedTasks.length === 0" class="no-tasks">
-              {{ t('tasks.noTasks') }}
-            </div>
-
-            <div v-else class="tasks-list">
-              <div
-                v-for="task in sortedTasks"
-                :key="task.id"
-                class="task-item"
-                :class="[`priority-${task.priority}`, { completed: task.status === 'completed' }]"
-              >
-                <div class="task-header">
-                  <div class="task-check-title">
-                    <input
-                      type="checkbox"
-                      :checked="task.status === 'completed'"
-                      @change="$emit('toggle-task', task.id)"
-                      class="task-checkbox"
-                    />
-                    <span class="task-title" @click="$emit('toggle-task', task.id)">{{ task.title }}</span>
-                  </div>
-                  <button @click="$emit('delete-task', task.id)" class="task-delete-btn" title="Delete task">
-                    ×
-                  </button>
-                </div>
-
-                <div class="task-footer">
-                  <span class="priority-badge" :class="task.priority">
-                    {{ translatePriority(task.priority) }}
-                  </span>
-                  <div class="task-due-date">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <rect x="2" y="3" width="10" height="9" rx="1" stroke="currentColor" stroke-width="1.2"/>
-                      <path d="M4.5 1.5V4.5M9.5 1.5V4.5M2 6H12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                    </svg>
-                    {{ formatDueDate(task.dueDate) }}
-                  </div>
-                  <span class="status-badge" :class="getStatusClass(task.dueDate, task.status)">
-                    {{ getStatusText(task.dueDate, task.status) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn-secondary" @click="close">{{ t('profileDetails.close') }}</button>
-          </div>
+  <BaseModal
+    :is-open="isOpen"
+    :title="t('tasks.title')"
+    size="lg"
+    @close="close"
+  >
+    <!-- Add Task Form -->
+    <div class="task-form">
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label for="task-title">{{ t('tasks.taskTitle') }}</label>
+          <input
+            id="task-title"
+            v-model="newTask.title"
+            type="text"
+            :placeholder="t('tasks.taskTitlePlaceholder')"
+            class="task-input"
+            @keyup.enter="handleAddTask"
+          />
         </div>
       </div>
-    </Transition>
-  </Teleport>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="task-priority">{{ t('tasks.priority') }}</label>
+          <select
+            id="task-priority"
+            v-model="newTask.priority"
+            class="task-select"
+          >
+            <option value="high">{{ t('priority.high') }}</option>
+            <option value="medium">{{ t('priority.medium') }}</option>
+            <option value="low">{{ t('priority.low') }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="task-due-date">{{ t('tasks.dueDate') }}</label>
+          <input
+            id="task-due-date"
+            v-model="newTask.dueDate"
+            type="date"
+            class="task-input"
+          />
+        </div>
+
+        <div class="form-group-btn">
+          <button @click="handleAddTask" class="task-add-btn" :disabled="!newTask.title.trim() || !newTask.dueDate">
+            {{ t('tasks.addTask') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tasks-divider"></div>
+
+    <!-- Tasks List -->
+    <div v-if="sortedTasks.length === 0" class="no-tasks">
+      {{ t('tasks.noTasks') }}
+    </div>
+
+    <div v-else class="tasks-list">
+      <div
+        v-for="task in sortedTasks"
+        :key="task.id"
+        class="task-item"
+        :class="[`priority-${task.priority}`, { completed: task.status === 'completed' }]"
+      >
+        <div class="task-header">
+          <div class="task-check-title">
+            <input
+              type="checkbox"
+              :checked="task.status === 'completed'"
+              @change="$emit('toggle-task', task.id)"
+              class="task-checkbox"
+            />
+            <span class="task-title" @click="$emit('toggle-task', task.id)">{{ task.title }}</span>
+          </div>
+          <button @click="$emit('delete-task', task.id)" class="task-delete-btn" title="Delete task">
+            &times;
+          </button>
+        </div>
+
+        <div class="task-footer">
+          <span class="priority-badge" :class="task.priority">
+            {{ translatePriority(task.priority) }}
+          </span>
+          <div class="task-due-date">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <rect x="2" y="3" width="10" height="9" rx="1" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M4.5 1.5V4.5M9.5 1.5V4.5M2 6H12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            {{ formatDueDate(task.dueDate) }}
+          </div>
+          <span class="status-badge" :class="getStatusClass(task.dueDate, task.status)">
+            {{ getStatusText(task.dueDate, task.status) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <button class="btn-secondary" @click="close">{{ t('profileDetails.close') }}</button>
+    </template>
+  </BaseModal>
 </template>
 
 <script>
 import { ref, computed } from 'vue'
+import BaseModal from './BaseModal.vue'
 import { useI18n } from '../composables/useI18n'
 
 export default {
   name: 'TasksModal',
+  components: { BaseModal },
   props: {
     isOpen: {
       type: Boolean,
@@ -245,108 +235,36 @@ export default {
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  width: 90%;
-  max-width: 700px;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.tasks-modal-container {
-  max-width: 900px;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.modal-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.close-button:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-.modal-body {
-  padding: 2rem;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.modal-footer {
-  padding: 1.5rem 2rem;
-  border-top: 2px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
 .btn-secondary {
-  padding: 0.75rem 1.5rem;
-  background: #f1f5f9;
-  color: #475569;
-  border: none;
-  border-radius: 8px;
+  padding: var(--space-3) var(--space-6);
+  background: var(--bg-muted);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   font-weight: 600;
+  font-size: var(--text-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+  font-family: inherit;
 }
 
 .btn-secondary:hover {
-  background: #e2e8f0;
+  background: var(--border);
+  border-color: var(--border-strong);
 }
 
 /* Task Form */
 .task-form {
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  background: var(--bg-muted);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
 }
 
 .form-row {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .form-row:last-child {
@@ -356,7 +274,7 @@ export default {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
   flex: 1;
 }
 
@@ -370,47 +288,49 @@ export default {
 }
 
 label {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .task-input,
 .task-select {
-  padding: 0.75rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  transition: border-color 0.2s ease;
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
+  transition: border-color var(--transition-fast);
   font-family: inherit;
 }
 
 .task-input:focus,
 .task-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
 }
 
 .task-select {
   cursor: pointer;
-  background: white;
+  background: var(--bg-surface);
 }
 
 .task-add-btn {
-  padding: 0.75rem 1.75rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  padding: var(--space-3) var(--space-6);
+  background: var(--accent);
+  color: var(--text-on-accent);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition: background var(--transition-fast), transform var(--transition-fast);
   white-space: nowrap;
   height: fit-content;
 }
 
 .task-add-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
+  background: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
 .task-add-btn:disabled {
@@ -420,47 +340,47 @@ label {
 
 .tasks-divider {
   height: 1px;
-  background: #e2e8f0;
-  margin: 2rem 0;
+  background: var(--border);
+  margin: var(--space-7) 0;
 }
 
 .no-tasks {
   text-align: center;
-  padding: 3rem;
-  color: #64748b;
-  font-size: 1.1rem;
+  padding: var(--space-9);
+  color: var(--text-secondary);
+  font-size: var(--text-md);
   font-style: italic;
 }
 
 .tasks-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .task-item {
-  background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 1rem 1.25rem;
-  transition: all 0.2s ease;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .task-item:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-xs);
 }
 
 .task-item.priority-high {
-  border-left: 4px solid #dc2626;
+  border-left: 4px solid var(--color-danger-fg);
 }
 
 .task-item.priority-medium {
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid var(--color-warning-fg);
 }
 
 .task-item.priority-low {
-  border-left: 4px solid #2563eb;
+  border-left: 4px solid var(--accent);
 }
 
 .task-item.completed {
@@ -471,14 +391,14 @@ label {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.75rem;
-  gap: 1rem;
+  margin-bottom: var(--space-3);
+  gap: var(--space-4);
 }
 
 .task-check-title {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   flex: 1;
 }
 
@@ -486,7 +406,7 @@ label {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: #667eea;
+  accent-color: var(--accent);
   flex-shrink: 0;
 }
 
@@ -494,28 +414,28 @@ label {
   flex: 1;
   cursor: pointer;
   user-select: none;
-  color: #0f172a;
-  font-size: 1rem;
+  color: var(--text-primary);
+  font-size: var(--text-md);
   font-weight: 600;
-  line-height: 1.4;
+  line-height: var(--leading-tight);
 }
 
 .task-item.completed .task-title {
   text-decoration: line-through;
-  color: #94a3b8;
+  color: var(--text-tertiary);
 }
 
 .task-delete-btn {
   width: 28px;
   height: 28px;
-  background: #ef4444;
-  color: white;
+  background: var(--color-danger-fg);
+  color: var(--text-on-accent);
   border: none;
-  border-radius: 6px;
-  font-size: 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-lg);
   line-height: 1;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,98 +444,77 @@ label {
 }
 
 .task-delete-btn:hover {
-  background: #dc2626;
+  opacity: 0.85;
   transform: scale(1.1);
 }
 
 .task-footer {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .priority-badge {
-  font-size: 0.688rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   text-transform: uppercase;
-  padding: 0.25rem 0.625rem;
-  border-radius: 4px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
   letter-spacing: 0.025em;
 }
 
 .priority-badge.high {
-  background: #fecaca;
-  color: #991b1b;
+  background: var(--color-danger-subtle);
+  color: var(--color-danger-fg);
 }
 
 .priority-badge.medium {
-  background: #fed7aa;
-  color: #92400e;
+  background: var(--color-warning-subtle);
+  color: var(--color-warning-fg);
 }
 
 .priority-badge.low {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--accent-subtle);
+  color: var(--color-accent-700);
 }
 
 .task-due-date {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.813rem;
-  color: #64748b;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .task-due-date svg {
-  color: #94a3b8;
+  color: var(--text-tertiary);
 }
 
 .status-badge {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 600;
-  padding: 0.25rem 0.625rem;
-  border-radius: 4px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
   margin-left: auto;
 }
 
 .status-badge.overdue {
-  background: #fecaca;
-  color: #991b1b;
+  background: var(--color-danger-subtle);
+  color: var(--color-danger-fg);
 }
 
 .status-badge.urgent {
-  background: #fed7aa;
-  color: #92400e;
+  background: var(--color-warning-subtle);
+  color: var(--color-warning-fg);
 }
 
 .status-badge.upcoming {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--accent-subtle);
+  color: var(--color-accent-700);
 }
 
 .status-badge.completed {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-/* Modal transitions */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-enter-active .modal-container,
-.modal-leave-active .modal-container {
-  transition: transform 0.3s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-enter-from .modal-container,
-.modal-leave-to .modal-container {
-  transform: scale(0.9);
+  background: var(--color-success-subtle);
+  color: var(--color-success-fg);
 }
 </style>
