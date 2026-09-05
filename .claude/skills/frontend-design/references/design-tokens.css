@@ -1,0 +1,167 @@
+/*
+ * frontend-design skill — design token set
+ * Visual direction: soft / approachable SaaS (Notion / Linear-lite / Height).
+ *
+ * HOW TO USE
+ * ----------
+ * These tokens are the STARTING PROPOSAL. During the skill's Phase 2 you present
+ * the values below to the user as a table and adjust to their taste BEFORE any
+ * .vue file is touched. Once approved, paste the :root block (and the reset +
+ * primitives that follow it in sidebar-shell.md / component-sweep.md) into the
+ * single global <style> block at the bottom of client/src/App.vue. Do not create
+ * a separate .css file — this repo keeps all styles in SFCs, and App.vue is the
+ * documented global sheet ("Styles: client/src/App.vue" in CLAUDE.md).
+ *
+ * The font is loaded via a <link> in client/index.html, never an npm package
+ * (the repo is PUBLIC and pins the npm registry; adding a dep churns the
+ * gitignored lockfile).
+ */
+
+:root {
+  /* ---- Font --------------------------------------------------------------- */
+  /* Inter is the safe default. For a rounder, friendlier feel swap the first
+     family for 'DM Sans' or 'Figtree' and update the index.html <link>. */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, sans-serif;
+
+  /* ---- Neutral ramp (warm gray — Tailwind "stone") ---------------------- */
+  --color-neutral-50:  #fafaf9;
+  --color-neutral-100: #f5f5f4;
+  --color-neutral-200: #e7e5e4;
+  --color-neutral-300: #d6d3d1;
+  --color-neutral-400: #a8a29e;
+  --color-neutral-500: #78716c;
+  --color-neutral-600: #57534e;
+  --color-neutral-700: #44403c;
+  --color-neutral-800: #292524;
+  --color-neutral-900: #1c1917;
+  --color-neutral-950: #0c0a09;
+
+  /* ---- Accent (friendly periwinkle indigo) ----------------------------- */
+  --color-accent-50:  #eef0fb;
+  --color-accent-100: #dfe3f7;
+  --color-accent-200: #c4cbf0;
+  --color-accent-300: #9fa9e4;
+  --color-accent-400: #7b83d6;
+  --color-accent-500: #5f66c9;
+  --color-accent-600: #4d51b0;
+  --color-accent-700: #40428f;
+
+  /* ---- Semantic status (aligned to the existing green/blue/yellow/red) -- */
+  --color-success-fg:     #15803d;
+  --color-success-subtle: #dcfce7;
+  --color-warning-fg:     #b45309;
+  --color-warning-subtle: #fef3c7;
+  --color-danger-fg:      #b91c1c;
+  --color-danger-subtle:  #fee2e2;
+  --color-info-fg:        var(--color-accent-600);
+  --color-info-subtle:    var(--color-accent-50);
+
+  /* ---- Semantic surfaces & text --------------------------------------- */
+  --bg-app:            var(--color-neutral-100);
+  --bg-surface:        #ffffff;
+  --bg-muted:          var(--color-neutral-50);
+  --bg-sidebar:        var(--color-neutral-50);
+  --border:            var(--color-neutral-200);
+  --border-strong:     var(--color-neutral-300);
+  --text-primary:      var(--color-neutral-900);
+  --text-secondary:    var(--color-neutral-500);
+  --text-tertiary:     var(--color-neutral-400);
+  --text-on-accent:    #ffffff;
+
+  --accent:            var(--color-accent-500);
+  --accent-hover:      var(--color-accent-600);
+  --accent-subtle:     var(--color-accent-50);
+  --accent-border:     var(--color-accent-200);
+
+  /* ---- Spacing scale (4px base) -------------------------------------- */
+  --space-1:  0.25rem;  /*  4 */
+  --space-2:  0.5rem;   /*  8 */
+  --space-3:  0.75rem;  /* 12 */
+  --space-4:  1rem;     /* 16 */
+  --space-5:  1.25rem;  /* 20 */
+  --space-6:  1.5rem;   /* 24 */
+  --space-7:  2rem;     /* 32 */
+  --space-8:  2.5rem;   /* 40 */
+  --space-9:  3rem;     /* 48 */
+  --space-10: 4rem;     /* 64 */
+  --space-11: 5rem;     /* 80 */
+  --space-12: 6rem;     /* 96 */
+
+  /* ---- Radius (soft) ------------------------------------------------- */
+  --radius-sm:   10px;  /* controls, badges, nav items */
+  --radius-md:   12px;  /* cards, inputs */
+  --radius-lg:   16px;  /* modals, sidebar surfaces */
+  --radius-full: 9999px;
+
+  /* ---- Elevation (gentle, large-blur, low-opacity) ----------------- */
+  --shadow-xs: 0 1px 2px rgba(12, 10, 9, 0.04), 0 1px 3px rgba(12, 10, 9, 0.06);
+  --shadow-sm: 0 4px 12px rgba(12, 10, 9, 0.06);
+  --shadow-md: 0 12px 32px rgba(12, 10, 9, 0.10);
+
+  /* ---- Type scale -------------------------------------------------- */
+  --text-xs:   0.75rem;    /* 12 — table headers, meta */
+  --text-sm:   0.875rem;   /* 14 — secondary text, labels */
+  --text-base: 0.9375rem;  /* 15 — body default */
+  --text-md:   1rem;       /* 16 */
+  --text-lg:   1.125rem;   /* 18 — card titles */
+  --text-xl:   1.375rem;   /* 22 — section headings */
+  --text-2xl:  1.75rem;    /* 28 — page titles */
+  --text-3xl:  2.125rem;   /* 34 — stat values */
+  --leading-tight:  1.25;
+  --leading-normal: 1.6;
+  --tracking-tight: -0.01em;
+
+  /* ---- Controls -------------------------------------------------- */
+  --control-h:    40px;
+  --control-h-sm: 32px;
+  --focus-ring:   0 0 0 3px var(--color-accent-100);
+
+  /* ---- Layout -------------------------------------------------- */
+  --sidebar-w:           256px;
+  --sidebar-w-collapsed: 68px;
+  --topbar-h:            60px;
+  --content-max:         1440px;
+  --content-pad:         var(--space-7);
+  --breakpoint-md:       1024px;
+
+  /* ---- Motion ------------------------------------------------ */
+  --transition-fast: 120ms ease;
+  --transition:      200ms ease;
+
+  /* ---- Z-index (single source; replaces the ad-hoc 90/100/1000/2000) -- */
+  --z-filterbar: 20;
+  --z-sidebar:   40;
+  --z-drawer:    60;
+  --z-dropdown:  80;
+  --z-modal:     100;
+}
+
+/*
+ * NOTES FOR THE SWEEP
+ * ------------------
+ * - Every hardcoded hex in a scoped <style> maps to a token above. The common
+ *   translations from the current codebase:
+ *     #0f172a / #1e293b        -> var(--text-primary)
+ *     #64748b / #475569        -> var(--text-secondary)
+ *     #94a3b8                  -> var(--text-tertiary)
+ *     #e2e8f0                  -> var(--border)
+ *     #cbd5e1                  -> var(--border-strong)
+ *     #f8fafc / #f1f5f9        -> var(--bg-muted) / var(--bg-app)
+ *     #ffffff                  -> var(--bg-surface)
+ *     #2563eb / #3b82f6        -> var(--accent)
+ *     #eff6ff / #dbeafe        -> var(--accent-subtle)
+ *     #059669 / #065f46        -> var(--color-success-fg)
+ *     #d1fae5                  -> var(--color-success-subtle)
+ *     #ea580c / #92400e        -> var(--color-warning-fg)
+ *     #fed7aa                  -> var(--color-warning-subtle)
+ *     #dc2626 / #991b1b        -> var(--color-danger-fg)
+ *     #fecaca / #fef2f2        -> var(--color-danger-subtle)
+ *   The off-palette purple gradients (#667eea / #764ba2) in TasksModal.vue and
+ *   Dashboard.vue have NO token — replace them with var(--accent).
+ * - border-radius: 6px/8px -> var(--radius-sm); 10px -> var(--radius-md);
+ *   12px (modals) -> var(--radius-lg). Reports.vue's 12px card -> var(--radius-md).
+ * - All the ad-hoc box-shadows collapse to --shadow-xs / --shadow-sm / --shadow-md.
+ * - Spacing: round each padding/margin/gap to the nearest --space-* step. The
+ *   off-grid values (0.4rem, 0.313rem, 0.375rem, 0.688rem) all snap to a step.
+ */
