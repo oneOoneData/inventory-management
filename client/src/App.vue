@@ -6,7 +6,15 @@
       'app--mobile-nav-open': mobileNavOpen
     }"
   >
-    <aside class="sidebar" :class="{ 'sidebar--open': mobileNavOpen }">
+    <aside
+      id="app-sidebar"
+      ref="sidebarRef"
+      class="sidebar"
+      :class="{ 'sidebar--open': mobileNavOpen }"
+      :inert="isMobileViewport && !mobileNavOpen ? true : undefined"
+      :role="isMobileViewport && mobileNavOpen ? 'dialog' : undefined"
+      :aria-modal="isMobileViewport && mobileNavOpen ? 'true' : undefined"
+    >
       <div class="sidebar__brand">
         <span class="sidebar__mark">CC</span>
         <span class="sidebar__brand-text">
@@ -24,7 +32,11 @@
           :class="{ 'sidebar__link--active': $route.path === item.path }"
           :title="sidebarCollapsed ? item.label : undefined"
         >
-          <span class="sidebar__icon" v-html="item.icon" aria-hidden="true"></span>
+          <span
+            class="sidebar__icon"
+            v-html="item.icon"
+            aria-hidden="true"
+          ></span>
           <span class="sidebar__label">{{ item.label }}</span>
         </router-link>
       </nav>
@@ -55,7 +67,9 @@
           >
             <path d="m15 18-6-6 6-6" />
           </svg>
-          <span class="sidebar__collapse-label">{{ t('nav.collapseSidebar') }}</span>
+          <span class="sidebar__collapse-label">{{
+            t('nav.collapseSidebar')
+          }}</span>
         </button>
       </div>
     </aside>
@@ -69,10 +83,13 @@
     <div class="app__content">
       <div class="app__topbar">
         <button
+          ref="hamburgerRef"
           class="app__hamburger"
           type="button"
           @click="mobileNavOpen = !mobileNavOpen"
-          :aria-label="t('nav.collapseSidebar')"
+          :aria-label="t('nav.openNav')"
+          :aria-expanded="mobileNavOpen"
+          aria-controls="app-sidebar"
         >
           <svg
             width="22"
@@ -113,9 +130,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { api } from './api'
 import { useAuth } from './composables/useAuth'
 import { useI18n } from './composables/useI18n'
 import FilterBar from './components/FilterBar.vue'
@@ -130,7 +146,6 @@ const { t } = useI18n()
 
 const showProfileDetails = ref(false)
 const showTasks = ref(false)
-const apiTasks = ref([])
 
 const ICONS = {
   overview:
@@ -148,12 +163,42 @@ const ICONS = {
 }
 
 const navItems = computed(() => [
-  { path: '/', labelKey: 'nav.overview', label: t('nav.overview'), icon: ICONS.overview },
-  { path: '/inventory', labelKey: 'nav.inventory', label: t('nav.inventory'), icon: ICONS.inventory },
-  { path: '/orders', labelKey: 'nav.orders', label: t('nav.orders'), icon: ICONS.orders },
-  { path: '/spending', labelKey: 'nav.finance', label: t('nav.finance'), icon: ICONS.finance },
-  { path: '/demand', labelKey: 'nav.demandForecast', label: t('nav.demandForecast'), icon: ICONS.demand },
-  { path: '/reports', labelKey: 'nav.reports', label: t('nav.reports'), icon: ICONS.reports }
+  {
+    path: '/',
+    labelKey: 'nav.overview',
+    label: t('nav.overview'),
+    icon: ICONS.overview
+  },
+  {
+    path: '/inventory',
+    labelKey: 'nav.inventory',
+    label: t('nav.inventory'),
+    icon: ICONS.inventory
+  },
+  {
+    path: '/orders',
+    labelKey: 'nav.orders',
+    label: t('nav.orders'),
+    icon: ICONS.orders
+  },
+  {
+    path: '/spending',
+    labelKey: 'nav.finance',
+    label: t('nav.finance'),
+    icon: ICONS.finance
+  },
+  {
+    path: '/demand',
+    labelKey: 'nav.demandForecast',
+    label: t('nav.demandForecast'),
+    icon: ICONS.demand
+  },
+  {
+    path: '/reports',
+    labelKey: 'nav.reports',
+    label: t('nav.reports'),
+    icon: ICONS.reports
+  }
 ])
 
 const sidebarCollapsed = ref(false)
@@ -166,7 +211,10 @@ try {
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
   try {
-    localStorage.setItem('sidebar-collapsed', sidebarCollapsed.value ? 'true' : 'false')
+    localStorage.setItem(
+      'sidebar-collapsed',
+      sidebarCollapsed.value ? 'true' : 'false'
+    )
   } catch (err) {
     // ignore write failures
   }
@@ -180,75 +228,107 @@ watch(
   }
 )
 
-// Merge mock tasks from currentUser with API tasks
-const tasks = computed(() => {
-  return [...currentUser.value.tasks, ...apiTasks.value]
+// Tasks are local-only demo state (no backend route exists). Seed from the mock
+// currentUser and hold in a local ref so add/toggle/delete are reactive. Switching
+// locale rebuilds currentUser, so re-seed (task edits reset with the language, as
+// before). No /api/tasks calls — that route never existed and 404'd on every load.
+const tasks = ref([...currentUser.value.tasks])
+watch(currentUser, (user) => {
+  tasks.value = [...user.tasks]
 })
 
-const loadTasks = async () => {
-  try {
-    apiTasks.value = await api.getTasks()
-  } catch (err) {
-    console.error('Failed to load tasks:', err)
+const addTask = (taskData) => {
+  tasks.value.unshift({
+    id: Date.now(),
+    status: 'pending',
+    ...taskData
+  })
+}
+
+const deleteTask = (taskId) => {
+  tasks.value = tasks.value.filter((t) => t.id !== taskId)
+}
+
+const toggleTask = (taskId) => {
+  const task = tasks.value.find((t) => t.id === taskId)
+  if (task) {
+    task.status = task.status === 'pending' ? 'completed' : 'pending'
   }
 }
 
-const addTask = async (taskData) => {
-  try {
-    const newTask = await api.createTask(taskData)
-    apiTasks.value.unshift(newTask)
-  } catch (err) {
-    console.error('Failed to add task:', err)
-  }
+// ---- Mobile nav drawer: viewport tracking + focus trap -------------------
+const sidebarRef = ref(null)
+const hamburgerRef = ref(null)
+const isMobileViewport = ref(false)
+let mobileMedia = null
+
+const onMediaChange = (event) => {
+  isMobileViewport.value = event.matches
 }
 
-const deleteTask = async (taskId) => {
-  try {
-    const isMockTask = currentUser.value.tasks.some(t => t.id === taskId)
-
-    if (isMockTask) {
-      const index = currentUser.value.tasks.findIndex(t => t.id === taskId)
-      if (index !== -1) {
-        currentUser.value.tasks.splice(index, 1)
+const onDrawerKeydown = (event) => {
+  if (!mobileNavOpen.value) return
+  if (event.key === 'Escape') {
+    mobileNavOpen.value = false
+    return
+  }
+  if (event.key === 'Tab' && sidebarRef.value) {
+    const focusable = Array.from(
+      sidebarRef.value.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((el) => el.offsetParent !== null)
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    const active = document.activeElement
+    if (event.shiftKey) {
+      if (active === first || !sidebarRef.value.contains(active)) {
+        event.preventDefault()
+        last.focus()
       }
-    } else {
-      await api.deleteTask(taskId)
-      apiTasks.value = apiTasks.value.filter(t => t.id !== taskId)
+    } else if (active === last || !sidebarRef.value.contains(active)) {
+      event.preventDefault()
+      first.focus()
     }
-  } catch (err) {
-    console.error('Failed to delete task:', err)
   }
 }
 
-const toggleTask = async (taskId) => {
-  try {
-    const mockTask = currentUser.value.tasks.find(t => t.id === taskId)
-
-    if (mockTask) {
-      mockTask.status = mockTask.status === 'pending' ? 'completed' : 'pending'
-    } else {
-      const updatedTask = await api.toggleTask(taskId)
-      const index = apiTasks.value.findIndex(t => t.id === taskId)
-      if (index !== -1) {
-        apiTasks.value[index] = updatedTask
-      }
+watch(mobileNavOpen, async (open) => {
+  if (open) {
+    document.addEventListener('keydown', onDrawerKeydown)
+    await nextTick()
+    const firstLink = sidebarRef.value?.querySelector('.sidebar__link')
+    firstLink?.focus()
+  } else {
+    document.removeEventListener('keydown', onDrawerKeydown)
+    if (isMobileViewport.value) {
+      hamburgerRef.value?.focus()
     }
-  } catch (err) {
-    console.error('Failed to toggle task:', err)
   }
-}
+})
 
-onMounted(loadTasks)
+onMounted(() => {
+  mobileMedia = window.matchMedia('(max-width: 1024px)')
+  isMobileViewport.value = mobileMedia.matches
+  mobileMedia.addEventListener('change', onMediaChange)
+})
+
+onBeforeUnmount(() => {
+  mobileMedia?.removeEventListener('change', onMediaChange)
+  document.removeEventListener('keydown', onDrawerKeydown)
+})
 </script>
 
 <style>
 :root {
   /* ---- Font --------------------------------------------------------------- */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
 
   /* ---- Neutral ramp (warm gray — Tailwind "stone") ---------------------- */
-  --color-neutral-50:  #fafaf9;
+  --color-neutral-50: #fafaf9;
   --color-neutral-100: #f5f5f4;
   --color-neutral-200: #e7e5e4;
   --color-neutral-300: #d6d3d1;
@@ -261,7 +341,7 @@ onMounted(loadTasks)
   --color-neutral-950: #0c0a09;
 
   /* ---- Accent (friendly periwinkle indigo) ----------------------------- */
-  --color-accent-50:  #eef0fb;
+  --color-accent-50: #eef0fb;
   --color-accent-100: #dfe3f7;
   --color-accent-200: #c4cbf0;
   --color-accent-300: #9fa9e4;
@@ -271,93 +351,93 @@ onMounted(loadTasks)
   --color-accent-700: #40428f;
 
   /* ---- Semantic status (aligned to the existing green/blue/yellow/red) -- */
-  --color-success-fg:     #15803d;
+  --color-success-fg: #15803d;
   --color-success-subtle: #dcfce7;
-  --color-warning-fg:     #b45309;
+  --color-warning-fg: #b45309;
   --color-warning-subtle: #fef3c7;
-  --color-danger-fg:      #b91c1c;
-  --color-danger-subtle:  #fee2e2;
-  --color-info-fg:        var(--color-accent-600);
-  --color-info-subtle:    var(--color-accent-50);
+  --color-danger-fg: #b91c1c;
+  --color-danger-subtle: #fee2e2;
+  --color-info-fg: var(--color-accent-600);
+  --color-info-subtle: var(--color-accent-50);
 
   /* ---- Semantic surfaces & text --------------------------------------- */
-  --bg-app:            var(--color-neutral-100);
-  --bg-surface:        #ffffff;
-  --bg-muted:          var(--color-neutral-50);
-  --bg-sidebar:        var(--color-neutral-50);
-  --border:            var(--color-neutral-200);
-  --border-strong:     var(--color-neutral-300);
-  --text-primary:      var(--color-neutral-900);
-  --text-secondary:    var(--color-neutral-500);
-  --text-tertiary:     var(--color-neutral-400);
-  --text-on-accent:    #ffffff;
+  --bg-app: var(--color-neutral-100);
+  --bg-surface: #ffffff;
+  --bg-muted: var(--color-neutral-50);
+  --bg-sidebar: var(--color-neutral-50);
+  --border: var(--color-neutral-200);
+  --border-strong: var(--color-neutral-300);
+  --text-primary: var(--color-neutral-900);
+  --text-secondary: var(--color-neutral-500);
+  --text-tertiary: var(--color-neutral-400);
+  --text-on-accent: #ffffff;
 
-  --accent:            var(--color-accent-500);
-  --accent-hover:      var(--color-accent-600);
-  --accent-subtle:     var(--color-accent-50);
-  --accent-border:     var(--color-accent-200);
+  --accent: var(--color-accent-500);
+  --accent-hover: var(--color-accent-600);
+  --accent-subtle: var(--color-accent-50);
+  --accent-border: var(--color-accent-200);
 
   /* ---- Spacing scale (4px base) -------------------------------------- */
-  --space-1:  0.25rem;
-  --space-2:  0.5rem;
-  --space-3:  0.75rem;
-  --space-4:  1rem;
-  --space-5:  1.25rem;
-  --space-6:  1.5rem;
-  --space-7:  2rem;
-  --space-8:  2.5rem;
-  --space-9:  3rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+  --space-8: 2.5rem;
+  --space-9: 3rem;
   --space-10: 4rem;
   --space-11: 5rem;
   --space-12: 6rem;
 
   /* ---- Radius (soft) ------------------------------------------------- */
-  --radius-sm:   10px;
-  --radius-md:   12px;
-  --radius-lg:   16px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   --radius-full: 9999px;
 
   /* ---- Elevation (gentle, large-blur, low-opacity) ----------------- */
   --shadow-xs: 0 1px 2px rgba(12, 10, 9, 0.04), 0 1px 3px rgba(12, 10, 9, 0.06);
   --shadow-sm: 0 4px 12px rgba(12, 10, 9, 0.06);
-  --shadow-md: 0 12px 32px rgba(12, 10, 9, 0.10);
+  --shadow-md: 0 12px 32px rgba(12, 10, 9, 0.1);
 
   /* ---- Type scale -------------------------------------------------- */
-  --text-xs:   0.75rem;
-  --text-sm:   0.875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
   --text-base: 0.9375rem;
-  --text-md:   1rem;
-  --text-lg:   1.125rem;
-  --text-xl:   1.375rem;
-  --text-2xl:  1.75rem;
-  --text-3xl:  2.125rem;
-  --leading-tight:  1.25;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.125rem;
+  --leading-tight: 1.25;
   --leading-normal: 1.6;
   --tracking-tight: -0.01em;
 
   /* ---- Controls -------------------------------------------------- */
-  --control-h:    40px;
+  --control-h: 40px;
   --control-h-sm: 32px;
-  --focus-ring:   0 0 0 3px var(--color-accent-100);
+  --focus-ring: 0 0 0 3px var(--color-accent-100);
 
   /* ---- Layout -------------------------------------------------- */
-  --sidebar-w:           256px;
+  --sidebar-w: 256px;
   --sidebar-w-collapsed: 68px;
-  --topbar-h:            60px;
-  --content-max:         1440px;
-  --content-pad:         var(--space-7);
-  --breakpoint-md:       1024px;
+  --topbar-h: 60px;
+  --content-max: 1440px;
+  --content-pad: var(--space-7);
+  --breakpoint-md: 1024px;
 
   /* ---- Motion ------------------------------------------------ */
   --transition-fast: 120ms ease;
-  --transition:      200ms ease;
+  --transition: 200ms ease;
 
   /* ---- Z-index ------------------------------------------------ */
   --z-filterbar: 20;
-  --z-sidebar:   40;
-  --z-drawer:    60;
-  --z-dropdown:  80;
-  --z-modal:     100;
+  --z-sidebar: 40;
+  --z-drawer: 60;
+  --z-dropdown: 80;
+  --z-modal: 100;
 }
 
 * {
@@ -395,7 +475,9 @@ body {
   flex-direction: column;
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border);
-  transition: width var(--transition), transform var(--transition);
+  transition:
+    width var(--transition),
+    transform var(--transition);
 }
 
 .sidebar__brand {
@@ -465,7 +547,9 @@ body {
   text-decoration: none;
   font-weight: 500;
   font-size: var(--text-sm);
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .sidebar__link:hover {
@@ -515,7 +599,9 @@ body {
   font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .sidebar__collapse:hover {
@@ -622,7 +708,9 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-xs);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .stat-card:hover {
