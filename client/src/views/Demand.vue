@@ -5,30 +5,57 @@
       <p>{{ t('demand.description') }}</p>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
+    <div v-if="loading && initialLoad" class="loading">
+      {{ t('common.loading') }}
+    </div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else>
+    <div v-else :aria-busy="loading" :class="{ 'is-updating': loading }">
+      <div v-if="loading" class="updating-indicator" role="status">
+        {{ t('common.updating') }}
+      </div>
       <div class="demand-trend-cards">
         <div class="trend-card increasing-card">
           <div class="trend-header">
             <div class="trend-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
                 <line x1="7" y1="17" x2="17" y2="7" />
                 <polyline points="8 7 17 7 17 16" />
               </svg>
             </div>
             <div>
               <div class="trend-label">{{ t('demand.increasingDemand') }}</div>
-              <div class="trend-count">{{ t('demand.itemsCount', { count: getForecastsByTrend('increasing').length }) }}</div>
+              <div class="trend-count">
+                {{
+                  t('demand.itemsCount', {
+                    count: getForecastsByTrend('increasing').length
+                  })
+                }}
+              </div>
             </div>
           </div>
           <div class="trend-items">
-            <div v-for="item in getForecastsByTrend('increasing').slice(0, 5)" :key="item.id" class="trend-item">
+            <div
+              v-for="item in getForecastsByTrend('increasing').slice(0, 5)"
+              :key="item.id"
+              class="trend-item"
+            >
               <span class="item-name">{{ item.item_name }}</span>
               <span class="item-change">+{{ getChangePercent(item) }}%</span>
             </div>
-            <div v-if="getForecastsByTrend('increasing').length > 5" class="more-items">
-              +{{ getForecastsByTrend('increasing').length - 5 }} {{ t('demand.more') }}
+            <div
+              v-if="getForecastsByTrend('increasing').length > 5"
+              class="more-items"
+            >
+              +{{ getForecastsByTrend('increasing').length - 5 }}
+              {{ t('demand.more') }}
             </div>
           </div>
         </div>
@@ -36,23 +63,47 @@
         <div class="trend-card stable-card">
           <div class="trend-header">
             <div class="trend-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
                 <line x1="5" y1="12" x2="19" y2="12" />
                 <polyline points="13 6 19 12 13 18" />
               </svg>
             </div>
             <div>
               <div class="trend-label">{{ t('demand.stableDemand') }}</div>
-              <div class="trend-count">{{ t('demand.itemsCount', { count: getForecastsByTrend('stable').length }) }}</div>
+              <div class="trend-count">
+                {{
+                  t('demand.itemsCount', {
+                    count: getForecastsByTrend('stable').length
+                  })
+                }}
+              </div>
             </div>
           </div>
           <div class="trend-items">
-            <div v-for="item in getForecastsByTrend('stable').slice(0, 5)" :key="item.id" class="trend-item">
+            <div
+              v-for="item in getForecastsByTrend('stable').slice(0, 5)"
+              :key="item.id"
+              class="trend-item"
+            >
               <span class="item-name">{{ item.item_name }}</span>
-              <span class="item-change neutral">{{ getChangePercent(item) }}%</span>
+              <span class="item-change neutral"
+                >{{ getChangePercent(item) }}%</span
+              >
             </div>
-            <div v-if="getForecastsByTrend('stable').length > 5" class="more-items">
-              +{{ getForecastsByTrend('stable').length - 5 }} {{ t('demand.more') }}
+            <div
+              v-if="getForecastsByTrend('stable').length > 5"
+              class="more-items"
+            >
+              +{{ getForecastsByTrend('stable').length - 5 }}
+              {{ t('demand.more') }}
             </div>
           </div>
         </div>
@@ -60,23 +111,45 @@
         <div class="trend-card decreasing-card">
           <div class="trend-header">
             <div class="trend-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
                 <line x1="7" y1="7" x2="17" y2="17" />
                 <polyline points="17 8 17 17 8 17" />
               </svg>
             </div>
             <div>
               <div class="trend-label">{{ t('demand.decreasingDemand') }}</div>
-              <div class="trend-count">{{ t('demand.itemsCount', { count: getForecastsByTrend('decreasing').length }) }}</div>
+              <div class="trend-count">
+                {{
+                  t('demand.itemsCount', {
+                    count: getForecastsByTrend('decreasing').length
+                  })
+                }}
+              </div>
             </div>
           </div>
           <div class="trend-items">
-            <div v-for="item in getForecastsByTrend('decreasing').slice(0, 5)" :key="item.id" class="trend-item">
+            <div
+              v-for="item in getForecastsByTrend('decreasing').slice(0, 5)"
+              :key="item.id"
+              class="trend-item"
+            >
               <span class="item-name">{{ item.item_name }}</span>
               <span class="item-change">{{ getChangePercent(item) }}%</span>
             </div>
-            <div v-if="getForecastsByTrend('decreasing').length > 5" class="more-items">
-              +{{ getForecastsByTrend('decreasing').length - 5 }} {{ t('demand.more') }}
+            <div
+              v-if="getForecastsByTrend('decreasing').length > 5"
+              class="more-items"
+            >
+              +{{ getForecastsByTrend('decreasing').length - 5 }}
+              {{ t('demand.more') }}
             </div>
           </div>
         </div>
@@ -101,10 +174,14 @@
             </thead>
             <tbody>
               <tr v-for="forecast in forecasts" :key="forecast.id">
-                <td><strong>{{ forecast.item_sku }}</strong></td>
+                <td>
+                  <strong>{{ forecast.item_sku }}</strong>
+                </td>
                 <td>{{ forecast.item_name }}</td>
                 <td>{{ forecast.current_demand }}</td>
-                <td><strong>{{ forecast.forecasted_demand }}</strong></td>
+                <td>
+                  <strong>{{ forecast.forecasted_demand }}</strong>
+                </td>
                 <td>
                   <span :style="{ color: getChangeColor(forecast) }">
                     {{ getChangePercent(forecast) }}%
@@ -128,6 +205,7 @@
 <script>
 import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../api'
+import { debounce } from '../utils/debounce'
 import { useFilters } from '../composables/useFilters'
 import { useI18n } from '../composables/useI18n'
 
@@ -136,25 +214,34 @@ export default {
   setup() {
     const { t } = useI18n()
     const loading = ref(true)
+    const initialLoad = ref(true)
     const error = ref(null)
     const allForecasts = ref([])
     const inventoryItems = ref([])
 
     // Use shared filters
-    const { selectedLocation, selectedCategory, getCurrentFilters } = useFilters()
+    const { selectedLocation, selectedCategory, getCurrentFilters } =
+      useFilters()
 
     // Filter forecasts based on inventory filters
     const forecasts = computed(() => {
-      if (selectedLocation.value === 'all' && selectedCategory.value === 'all') {
+      if (
+        selectedLocation.value === 'all' &&
+        selectedCategory.value === 'all'
+      ) {
         return allForecasts.value
       }
 
       // Get SKUs of items that match the filters
-      const validSkus = new Set(inventoryItems.value.map(item => item.sku))
-      return allForecasts.value.filter(f => validSkus.has(f.item_sku))
+      const validSkus = new Set(inventoryItems.value.map((item) => item.sku))
+      return allForecasts.value.filter((f) => validSkus.has(f.item_sku))
     })
 
+    // Guards against an earlier slow response overwriting a newer filtered one.
+    let loadToken = 0
+
     const loadForecasts = async () => {
+      const myToken = ++loadToken
       try {
         loading.value = true
         const filters = getCurrentFilters()
@@ -167,26 +254,40 @@ export default {
           })
         ])
 
+        if (myToken !== loadToken) return
+
         allForecasts.value = forecastsData
         inventoryItems.value = inventoryData
       } catch (err) {
+        if (myToken !== loadToken) return
         error.value = 'Failed to load demand forecasts: ' + err.message
+        console.error(err)
       } finally {
-        loading.value = false
+        if (myToken === loadToken) {
+          loading.value = false
+          initialLoad.value = false
+        }
       }
     }
 
-    // Watch for filter changes and reload data
-    watch([selectedLocation, selectedCategory], () => {
-      loadForecasts()
-    })
+    // Watch for filter changes and reload data (debounced to coalesce rapid changes)
+    watch(
+      [selectedLocation, selectedCategory],
+      debounce(() => {
+        loadForecasts()
+      }, 250)
+    )
 
     const getForecastsByTrend = (trend) => {
-      return forecasts.value.filter(f => f.trend === trend)
+      return forecasts.value.filter((f) => f.trend === trend)
     }
 
     const getChangePercent = (forecast) => {
-      const change = ((forecast.forecasted_demand - forecast.current_demand) / forecast.current_demand * 100).toFixed(1)
+      const change = (
+        ((forecast.forecasted_demand - forecast.current_demand) /
+          forecast.current_demand) *
+        100
+      ).toFixed(1)
       return change > 0 ? `+${change}` : change
     }
 
@@ -227,6 +328,7 @@ export default {
     return {
       t,
       loading,
+      initialLoad,
       error,
       forecasts,
       getForecastsByTrend,
@@ -239,6 +341,25 @@ export default {
 </script>
 
 <style scoped>
+/* Refetch-in-progress: keep the last data visible but dim it and show a hint. */
+.is-updating {
+  opacity: 0.6;
+  transition: opacity var(--transition);
+  pointer-events: none;
+}
+
+.updating-indicator {
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
 .demand-trend-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
