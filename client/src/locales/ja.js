@@ -8,6 +8,7 @@ export default {
     demandForecast: '需要予測',
     reports: 'レポート',
     collapseSidebar: 'サイドバーを折りたたむ',
+    openNav: 'ナビゲーションを開く',
     companyName: '触媒コンポーネンツ',
     subtitle: '在庫管理システム'
   },
@@ -197,7 +198,8 @@ export default {
     category: 'カテゴリ',
     orderStatus: '注文ステータス',
     all: 'すべて',
-    allMonths: 'すべての月'
+    allMonths: 'すべての月',
+    reset: 'すべてのフィルターをリセット'
   },
 
   // Statuses
@@ -372,6 +374,8 @@ export default {
     quarterlyPerformance: '四半期パフォーマンス',
     monthlyRevenueTrend: '月次収益トレンド',
     momAnalysis: '前月比分析',
+    noDataForFilters: '選択したフィルターのデータがありません',
+    monthlyRevenueChartLabel: '月次収益棒グラフ',
     table: {
       quarter: '四半期',
       totalOrders: '総注文数',
@@ -402,7 +406,9 @@ export default {
   // Common
   common: {
     loading: '読み込み中...',
+    updating: '更新中…',
     error: 'エラー',
+    notAvailable: '該当なし',
     noData: 'データがありません',
     viewDetails: '詳細を見る',
     close: '閉じる',
