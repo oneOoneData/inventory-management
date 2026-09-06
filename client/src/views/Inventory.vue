@@ -5,15 +5,32 @@
       <p>{{ t('inventory.description') }}</p>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
+    <div v-if="loading && initialLoad" class="loading">
+      {{ t('common.loading') }}
+    </div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else>
+    <div v-else :aria-busy="loading" :class="{ 'is-updating': loading }">
+      <div v-if="loading" class="updating-indicator" role="status">
+        {{ t('common.updating') }}
+      </div>
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">{{ t('inventory.stockLevels') }} ({{ filteredItems.length }} {{ t('inventory.skus') }})</h3>
+          <h3 class="card-title">
+            {{ t('inventory.stockLevels') }} ({{ filteredItems.length }}
+            {{ t('inventory.skus') }})
+          </h3>
           <div class="search-box">
-            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+            <svg
+              class="search-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                clip-rule="evenodd"
+              />
             </svg>
             <input
               v-model="searchQuery"
@@ -27,8 +44,16 @@
               class="clear-search"
               :title="t('inventory.clearSearch')"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd"
+                />
               </svg>
             </button>
           </div>
@@ -53,15 +78,34 @@
                 v-for="item in filteredItems"
                 :key="item.id"
                 class="clickable-row"
+                tabindex="0"
+                role="button"
+                :aria-label="`${item.sku} ${translateProductName(item.name)}`"
                 @click="showItemDetail(item)"
+                @keydown.enter.prevent="showItemDetail(item)"
+                @keydown.space.prevent="showItemDetail(item)"
               >
-                <td><strong>{{ item.sku }}</strong></td>
+                <td>
+                  <strong>{{ item.sku }}</strong>
+                </td>
                 <td>{{ translateProductName(item.name) }}</td>
                 <td>{{ translateCategory(item.category) }}</td>
-                <td><strong>{{ item.quantity_on_hand }}</strong></td>
+                <td>
+                  <strong>{{ item.quantity_on_hand }}</strong>
+                </td>
                 <td>{{ item.reorder_point }}</td>
                 <td>{{ currencySymbol }}{{ item.unit_cost.toFixed(2) }}</td>
-                <td><strong>{{ currencySymbol }}{{ (item.quantity_on_hand * item.unit_cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+                <td>
+                  <strong
+                    >{{ currencySymbol
+                    }}{{
+                      (item.quantity_on_hand * item.unit_cost).toLocaleString(
+                        undefined,
+                        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                      )
+                    }}</strong
+                  >
+                </td>
                 <td>{{ translateWarehouse(item.location) }}</td>
                 <td>
                   <span :class="['badge', getStockStatusClass(item)]">
@@ -86,6 +130,7 @@
 <script>
 import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../api'
+import { debounce } from '../utils/debounce'
 import { useFilters } from '../composables/useFilters'
 import { useI18n } from '../composables/useI18n'
 import InventoryDetailModal from '../components/InventoryDetailModal.vue'
@@ -96,13 +141,15 @@ export default {
     InventoryDetailModal
   },
   setup() {
-    const { t, currentCurrency, translateProductName, translateWarehouse } = useI18n()
+    const { t, currentCurrency, translateProductName, translateWarehouse } =
+      useI18n()
 
     const currencySymbol = computed(() => {
       return currentCurrency.value === 'JPY' ? '¥' : '$'
     })
 
     const loading = ref(true)
+    const initialLoad = ref(true)
     const error = ref(null)
     const items = ref([])
     const searchQuery = ref('')
@@ -112,10 +159,11 @@ export default {
     const selectedItem = ref(null)
 
     // Use shared filters
-    const { selectedLocation, selectedCategory, getCurrentFilters } = useFilters()
+    const { selectedLocation, selectedCategory, getCurrentFilters } =
+      useFilters()
 
     // Stock status order for sorting (using status keys)
-    const STATUS_ORDER = { 'lowStock': 0, 'adequate': 1, 'inStock': 2 }
+    const STATUS_ORDER = { lowStock: 0, adequate: 1, inStock: 2 }
 
     // Get stock status key (for sorting and translation)
     const getStockStatusKey = (item) => {
@@ -135,7 +183,7 @@ export default {
       // Apply search filter if query exists
       if (searchQuery.value.trim()) {
         const query = searchQuery.value.toLowerCase().trim()
-        filtered = filtered.filter(item =>
+        filtered = filtered.filter((item) =>
           item.name.toLowerCase().includes(query)
         )
       }
@@ -149,26 +197,40 @@ export default {
       })
     })
 
+    // Guards against an earlier slow response overwriting a newer filtered one.
+    let loadToken = 0
+
     const loadInventory = async () => {
+      const myToken = ++loadToken
       try {
         loading.value = true
         const filters = getCurrentFilters()
         // Inventory doesn't support month/status filters, only warehouse and category
-        items.value = await api.getInventory({
+        const data = await api.getInventory({
           warehouse: filters.warehouse,
           category: filters.category
         })
+        if (myToken !== loadToken) return
+        items.value = data
       } catch (err) {
+        if (myToken !== loadToken) return
         error.value = 'Failed to load inventory: ' + err.message
+        console.error(err)
       } finally {
-        loading.value = false
+        if (myToken === loadToken) {
+          loading.value = false
+          initialLoad.value = false
+        }
       }
     }
 
-    // Watch for filter changes and reload data
-    watch([selectedLocation, selectedCategory], () => {
-      loadInventory()
-    })
+    // Watch for filter changes and reload data (debounced to coalesce rapid changes)
+    watch(
+      [selectedLocation, selectedCategory],
+      debounce(() => {
+        loadInventory()
+      }, 250)
+    )
 
     const getStockStatus = (item) => {
       const key = getStockStatusKey(item)
@@ -188,9 +250,9 @@ export default {
     const translateCategory = (category) => {
       const categoryMap = {
         'Circuit Boards': t('categories.circuitBoards'),
-        'Sensors': t('categories.sensors'),
-        'Actuators': t('categories.actuators'),
-        'Controllers': t('categories.controllers'),
+        Sensors: t('categories.sensors'),
+        Actuators: t('categories.actuators'),
+        Controllers: t('categories.controllers'),
         'Power Supplies': t('categories.powerSupplies')
       }
       return categoryMap[category] || category
@@ -206,6 +268,7 @@ export default {
     return {
       t,
       loading,
+      initialLoad,
       error,
       items,
       searchQuery,
@@ -250,7 +313,10 @@ export default {
   font-size: var(--text-sm);
   color: var(--text-primary);
   background: var(--bg-muted);
-  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition),
+    background var(--transition);
 }
 
 .search-input:focus {
@@ -276,7 +342,9 @@ export default {
   border-radius: var(--radius-sm);
   color: var(--text-tertiary);
   cursor: pointer;
-  transition: background var(--transition), color var(--transition);
+  transition:
+    background var(--transition),
+    color var(--transition);
 }
 
 .clear-search:hover {
@@ -295,5 +363,29 @@ export default {
 
 .clickable-row:hover {
   background: var(--bg-muted) !important;
+}
+
+.clickable-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Refetch-in-progress: keep the last data visible but dim it and show a hint. */
+.is-updating {
+  opacity: 0.6;
+  transition: opacity var(--transition);
+  pointer-events: none;
+}
+
+.updating-indicator {
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: center;
 }
 </style>

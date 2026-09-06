@@ -8,6 +8,7 @@ export default {
     demandForecast: 'Demand Forecast',
     reports: 'Reports',
     collapseSidebar: 'Collapse sidebar',
+    openNav: 'Open navigation',
     companyName: 'Catalyst Components',
     subtitle: 'Inventory Management System'
   },
@@ -197,7 +198,8 @@ export default {
     category: 'Category',
     orderStatus: 'Order Status',
     all: 'All',
-    allMonths: 'All Months'
+    allMonths: 'All Months',
+    reset: 'Reset all filters'
   },
 
   // Statuses
@@ -372,6 +374,8 @@ export default {
     quarterlyPerformance: 'Quarterly Performance',
     monthlyRevenueTrend: 'Monthly Revenue Trend',
     momAnalysis: 'Month-over-Month Analysis',
+    noDataForFilters: 'No data for the selected filters',
+    monthlyRevenueChartLabel: 'Monthly revenue bar chart',
     table: {
       quarter: 'Quarter',
       totalOrders: 'Total Orders',
@@ -402,7 +406,9 @@ export default {
   // Common
   common: {
     loading: 'Loading...',
+    updating: 'Updating…',
     error: 'Error',
+    notAvailable: 'N/A',
     noData: 'No data available',
     viewDetails: 'View Details',
     close: 'Close',

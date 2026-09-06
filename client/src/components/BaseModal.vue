@@ -1,27 +1,32 @@
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div
-        v-if="isOpen"
-        class="modal-overlay"
-        @click.self="$emit('close')"
-      >
+      <div v-if="isOpen" class="modal-overlay" @click.self="$emit('close')">
         <div
+          ref="containerRef"
           class="modal-container"
           :class="`modal-container--${size}`"
           role="dialog"
           aria-modal="true"
+          :aria-labelledby="title ? titleId : undefined"
+          :aria-label="title ? undefined : 'Dialog'"
         >
           <header class="modal-header">
-            <h2 class="modal-title">{{ title }}</h2>
+            <h2 :id="titleId" class="modal-title">{{ title }}</h2>
             <button
+              ref="closeButtonRef"
               class="modal-close"
               type="button"
               aria-label="Close"
               @click="$emit('close')"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path
+                  d="M15 5L5 15M5 5L15 15"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
               </svg>
             </button>
           </header>
@@ -40,7 +45,12 @@
 </template>
 
 <script setup>
-import { watch, onBeforeUnmount } from 'vue'
+import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
+
+// Vue 3.4 has no useId(); a module-level counter gives each modal instance a
+// stable unique id so the dialog can be wired to its title via aria-labelledby.
+let modalIdCounter = 0
+const titleId = `modal-title-${++modalIdCounter}`
 
 const props = defineProps({
   isOpen: {
@@ -59,30 +69,88 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
+const containerRef = ref(null)
+const closeButtonRef = ref(null)
+// The element that had focus before the modal opened, so we can restore it.
+let previouslyFocused = null
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(',')
+
+const getFocusable = () => {
+  if (!containerRef.value) return []
+  return Array.from(
+    containerRef.value.querySelectorAll(FOCUSABLE_SELECTOR)
+  ).filter((el) => el.offsetParent !== null || el === document.activeElement)
+}
+
 const onKeydown = (event) => {
   if (event.key === 'Escape') {
     emit('close')
+    return
   }
+  if (event.key === 'Tab') {
+    const focusable = getFocusable()
+    if (focusable.length === 0) {
+      event.preventDefault()
+      return
+    }
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    const active = document.activeElement
+    if (event.shiftKey) {
+      if (active === first || !containerRef.value.contains(active)) {
+        event.preventDefault()
+        last.focus()
+      }
+    } else if (active === last || !containerRef.value.contains(active)) {
+      event.preventDefault()
+      first.focus()
+    }
+  }
+}
+
+const activate = async () => {
+  if (typeof document === 'undefined') return
+  previouslyFocused =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+  document.addEventListener('keydown', onKeydown)
+  document.body.style.overflow = 'hidden'
+  await nextTick()
+  closeButtonRef.value?.focus()
+}
+
+const deactivate = () => {
+  if (typeof document === 'undefined') return
+  document.removeEventListener('keydown', onKeydown)
+  document.body.style.overflow = ''
+  if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+    previouslyFocused.focus()
+  }
+  previouslyFocused = null
 }
 
 watch(
   () => props.isOpen,
   (open) => {
-    if (typeof document === 'undefined') return
     if (open) {
-      document.addEventListener('keydown', onKeydown)
+      activate()
     } else {
-      document.removeEventListener('keydown', onKeydown)
+      deactivate()
     }
   },
   { immediate: true }
 )
 
-onBeforeUnmount(() => {
-  if (typeof document !== 'undefined') {
-    document.removeEventListener('keydown', onKeydown)
-  }
-})
+onBeforeUnmount(deactivate)
 </script>
 
 <style scoped>
@@ -146,7 +214,9 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .modal-close:hover {

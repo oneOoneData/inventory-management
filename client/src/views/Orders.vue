@@ -5,58 +5,92 @@
       <p>{{ t('orders.description') }}</p>
     </div>
 
-    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
+    <div v-if="loading && initialLoad" class="loading">
+      {{ t('common.loading') }}
+    </div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else>
+    <div v-else :aria-busy="loading" :class="{ 'is-updating': loading }">
+      <div v-if="loading" class="updating-indicator" role="status">
+        {{ t('common.updating') }}
+      </div>
       <div class="stats-grid">
         <div class="stat-card success">
           <div class="stat-label">{{ t('status.delivered') }}</div>
-          <div class="stat-value">{{ getOrdersByStatus('Delivered').length }}</div>
+          <div class="stat-value">
+            {{ getOrdersByStatus('Delivered').length }}
+          </div>
         </div>
         <div class="stat-card info">
           <div class="stat-label">{{ t('status.shipped') }}</div>
-          <div class="stat-value">{{ getOrdersByStatus('Shipped').length }}</div>
+          <div class="stat-value">
+            {{ getOrdersByStatus('Shipped').length }}
+          </div>
         </div>
         <div class="stat-card warning">
           <div class="stat-label">{{ t('status.processing') }}</div>
-          <div class="stat-value">{{ getOrdersByStatus('Processing').length }}</div>
+          <div class="stat-value">
+            {{ getOrdersByStatus('Processing').length }}
+          </div>
         </div>
         <div class="stat-card danger">
           <div class="stat-label">{{ t('status.backordered') }}</div>
-          <div class="stat-value">{{ getOrdersByStatus('Backordered').length }}</div>
+          <div class="stat-value">
+            {{ getOrdersByStatus('Backordered').length }}
+          </div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">{{ t('orders.allOrders') }} ({{ orders.length }})</h3>
+          <h3 class="card-title">
+            {{ t('orders.allOrders') }} ({{ orders.length }})
+          </h3>
         </div>
         <div class="table-container">
           <table class="orders-table">
             <thead>
               <tr>
-                <th class="col-order-number">{{ t('orders.table.orderNumber') }}</th>
+                <th class="col-order-number">
+                  {{ t('orders.table.orderNumber') }}
+                </th>
                 <th class="col-customer">{{ t('orders.table.customer') }}</th>
                 <th class="col-items">{{ t('orders.table.items') }}</th>
                 <th class="col-status">{{ t('orders.table.status') }}</th>
                 <th class="col-date">{{ t('orders.table.orderDate') }}</th>
-                <th class="col-date">{{ t('orders.table.expectedDelivery') }}</th>
+                <th class="col-date">
+                  {{ t('orders.table.expectedDelivery') }}
+                </th>
                 <th class="col-value">{{ t('orders.table.totalValue') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="order in orders" :key="order.id">
-                <td class="col-order-number"><strong>{{ order.order_number }}</strong></td>
-                <td class="col-customer">{{ translateCustomerName(order.customer) }}</td>
+                <td class="col-order-number">
+                  <strong>{{ order.order_number }}</strong>
+                </td>
+                <td class="col-customer">
+                  {{ translateCustomerName(order.customer) }}
+                </td>
                 <td class="col-items">
                   <details class="items-details">
                     <summary class="items-summary">
-                      {{ t('orders.itemsCount', { count: order.items.length }) }}
+                      {{
+                        t('orders.itemsCount', { count: order.items.length })
+                      }}
                     </summary>
                     <div class="items-dropdown">
-                      <div v-for="(item, idx) in order.items" :key="idx" class="item-entry">
-                        <span class="item-name">{{ translateProductName(item.name) }}</span>
-                        <span class="item-meta">{{ t('orders.quantity') }}: {{ item.quantity }} @ {{ currencySymbol }}{{ item.unit_price }}</span>
+                      <div
+                        v-for="(item, idx) in order.items"
+                        :key="idx"
+                        class="item-entry"
+                      >
+                        <span class="item-name">{{
+                          translateProductName(item.name)
+                        }}</span>
+                        <span class="item-meta"
+                          >{{ t('orders.quantity') }}: {{ item.quantity }} @
+                          {{ currencySymbol }}{{ item.unit_price }}</span
+                        >
                       </div>
                     </div>
                   </details>
@@ -67,8 +101,15 @@
                   </span>
                 </td>
                 <td class="col-date">{{ formatDate(order.order_date) }}</td>
-                <td class="col-date">{{ formatDate(order.expected_delivery) }}</td>
-                <td class="col-value"><strong>{{ currencySymbol }}{{ order.total_value.toLocaleString() }}</strong></td>
+                <td class="col-date">
+                  {{ formatDate(order.expected_delivery) }}
+                </td>
+                <td class="col-value">
+                  <strong
+                    >{{ currencySymbol
+                    }}{{ order.total_value.toLocaleString() }}</strong
+                  >
+                </td>
               </tr>
             </tbody>
           </table>
@@ -81,18 +122,21 @@
 <script>
 import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../api'
+import { debounce } from '../utils/debounce'
 import { useFilters } from '../composables/useFilters'
 import { useI18n } from '../composables/useI18n'
 
 export default {
   name: 'Orders',
   setup() {
-    const { t, currentCurrency, translateProductName, translateCustomerName } = useI18n()
+    const { t, currentCurrency, translateProductName, translateCustomerName } =
+      useI18n()
 
     const currencySymbol = computed(() => {
       return currentCurrency.value === 'JPY' ? '¥' : '$'
     })
     const loading = ref(true)
+    const initialLoad = ref(true)
     const error = ref(null)
     const orders = ref([])
 
@@ -105,11 +149,16 @@ export default {
       getCurrentFilters
     } = useFilters()
 
+    // Guards against an earlier slow response overwriting a newer filtered one.
+    let loadToken = 0
+
     const loadOrders = async () => {
+      const myToken = ++loadToken
       try {
         loading.value = true
         const filters = getCurrentFilters()
         const fetchedOrders = await api.getOrders(filters)
+        if (myToken !== loadToken) return
 
         // Sort orders by order_date (earliest first)
         orders.value = fetchedOrders.sort((a, b) => {
@@ -118,27 +167,35 @@ export default {
           return dateA - dateB
         })
       } catch (err) {
+        if (myToken !== loadToken) return
         error.value = 'Failed to load orders: ' + err.message
+        console.error(err)
       } finally {
-        loading.value = false
+        if (myToken === loadToken) {
+          loading.value = false
+          initialLoad.value = false
+        }
       }
     }
 
-    // Watch for filter changes and reload data
-    watch([selectedPeriod, selectedLocation, selectedCategory, selectedStatus], () => {
-      loadOrders()
-    })
+    // Watch for filter changes and reload data (debounced to coalesce rapid changes)
+    watch(
+      [selectedPeriod, selectedLocation, selectedCategory, selectedStatus],
+      debounce(() => {
+        loadOrders()
+      }, 250)
+    )
 
     const getOrdersByStatus = (status) => {
-      return orders.value.filter(order => order.status === status)
+      return orders.value.filter((order) => order.status === status)
     }
 
     const getOrderStatusClass = (status) => {
       const statusMap = {
-        'Delivered': 'success',
-        'Shipped': 'info',
-        'Processing': 'warning',
-        'Backordered': 'danger'
+        Delivered: 'success',
+        Shipped: 'info',
+        Processing: 'warning',
+        Backordered: 'danger'
       }
       return statusMap[status] || 'info'
     }
@@ -158,6 +215,7 @@ export default {
     return {
       t,
       loading,
+      initialLoad,
       error,
       orders,
       getOrdersByStatus,
@@ -172,6 +230,25 @@ export default {
 </script>
 
 <style scoped>
+/* Refetch-in-progress: keep the last data visible but dim it and show a hint. */
+.is-updating {
+  opacity: 0.6;
+  transition: opacity var(--transition);
+  pointer-events: none;
+}
+
+.updating-indicator {
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
 /* Fixed table layout to prevent column shifting */
 .orders-table {
   table-layout: fixed;

@@ -11,6 +11,15 @@ const translations = {
 const savedLocale = localStorage.getItem('app-locale') || 'en'
 const currentLocale = ref(savedLocale)
 
+// Keep the document language in sync so screen readers use the right pronunciation
+// rules (e.g. a Japanese speech synthesizer for 日本語 content).
+const syncDocumentLang = (locale) => {
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = locale === 'ja' ? 'ja' : 'en'
+  }
+}
+syncDocumentLang(savedLocale)
+
 // Currency is automatically set based on locale (en -> USD, ja -> JPY)
 const currentCurrency = computed(() => {
   return currentLocale.value === 'ja' ? 'JPY' : 'USD'
@@ -61,6 +70,7 @@ export function useI18n() {
     if (translations[locale]) {
       currentLocale.value = locale
       localStorage.setItem('app-locale', locale)
+      syncDocumentLang(locale)
     }
   }
 
@@ -76,7 +86,10 @@ export function useI18n() {
 
   // Translate product names
   const translateProductName = (productName) => {
-    if (currentLocale.value === 'ja' && translations.ja.productNames[productName]) {
+    if (
+      currentLocale.value === 'ja' &&
+      translations.ja.productNames[productName]
+    ) {
       return translations.ja.productNames[productName]
     }
     return productName
@@ -84,7 +97,10 @@ export function useI18n() {
 
   // Translate customer names
   const translateCustomerName = (customerName) => {
-    if (currentLocale.value === 'ja' && translations.ja.customerNames[customerName]) {
+    if (
+      currentLocale.value === 'ja' &&
+      translations.ja.customerNames[customerName]
+    ) {
       return translations.ja.customerNames[customerName]
     }
     return customerName
@@ -96,8 +112,8 @@ export function useI18n() {
       // Handle city names
       const cityMap = {
         'San Francisco': 'サンフランシスコ',
-        'London': 'ロンドン',
-        'Tokyo': '東京'
+        London: 'ロンドン',
+        Tokyo: '東京'
       }
 
       if (cityMap[warehouseName]) {
